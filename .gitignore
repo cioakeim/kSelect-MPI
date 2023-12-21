@@ -1,0 +1,9 @@
+# Ignore compiled binaries
+bin/
+obj/
+
+# Ignore localData for testing 
+localData/
+
+# Linter flags 
+compile_flags.txt
