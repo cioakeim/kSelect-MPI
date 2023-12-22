@@ -7,7 +7,6 @@
 #include "kSelectSequential.h"
 #include "arrayParsing.h"
 
-
 int kSelectParallel(char *array_filename, int k){
   //MPI_Init(NULL,NULL);
 
@@ -93,78 +92,6 @@ void updateIndices(INDICES *p, enum mode mode){
     }
 }
 
-int kSelectMaster(int *a, int a_size, int k, int world_size){
-  // Master Specific.
-  int relative_k=k;
-  srand(time(NULL));
-  int pivot_val,pivot_index;
-  int less_than_total_count,pivot_total_count;
-  // For all processes.
-  enum mode mode=LESS_THAN;
-  INDICES p;
-  p.i=p.ip=0;
-  p.j=p.jp=a_size-1;
-  RESULTS r;
-
-  do{
-    // Set boundaries of the next partition.
-    if(mode==LESS_THAN){
-      p.jp=p.j;
-      p.i=p.ip;
-    }
-    else if(mode==MORE_THAN){
-      p.ip=p.i;
-      p.j=p.jp;
-    }
-    less_than_total_count=pivot_total_count=0;
-    pivot_index=(p.jp!=p.ip)?(p.ip+rand()%(p.jp-p.ip)):(p.ip);
-    pivot_val=a[pivot_index];
-    MPI_Bcast(&pivot_val,1,MPI_INT,0,MPI_COMM_WORLD);
-    printf("BCast of pivot done, val:%d,\nrelative k:%d\n",pivot_val,relative_k);
-    r=arrayPartition(a,pivot_val,&p);
-    printf("Slave results: %d %d\n",r.less_than_count,r.pivot_count);
-
-    // Same decision code with sequential but with bCast and Reduce added
-    MPI_Reduce(&r.less_than_count,&less_than_total_count,1,MPI_INT, MPI_SUM,0,MPI_COMM_WORLD);
-    MPI_Reduce(&r.pivot_count,&pivot_total_count,1,MPI_INT,MPI_SUM,0,MPI_COMM_WORLD);
-    printf("Reduce results:%d %d\n",less_than_total_count,pivot_total_count);
-    getchar();
-    MPI_Bcast(&mode, 1, MPI_INT, 0, MPI_COMM_WORLD);
-  }while(mode!=STOP);
-  return pivot_val;
-}
-
-void kSelectSlave(int *a, int a_size){
-  INDICES p;
-  p.i=p.ip=0;
-  p.j=p.jp=a_size-1;
-  RESULTS r;
-  enum mode mode;
-  int pivot_val;
-
-  do{
-    // Set boundaries of the next partition.
-    if(mode==LESS_THAN){
-      p.jp=p.j;
-      p.i=p.ip;
-    }
-    else if(mode==MORE_THAN){
-      p.ip=p.i;
-      p.j=p.jp;
-    }
-
-    MPI_Bcast(&pivot_val,1,MPI_INT,0,MPI_COMM_WORLD);
-    r=arrayPartition(a,pivot_val,&p);
-    printf("Slave results: %d %d\n",r.less_than_count,r.pivot_count);
-
-    MPI_Reduce(&r.less_than_count,NULL,1,MPI_INT, MPI_SUM,0,MPI_COMM_WORLD);
-    MPI_Reduce(&r.pivot_count,NULL,1,MPI_INT,MPI_SUM,0,MPI_COMM_WORLD);
-
-    MPI_Bcast(&mode, 1, MPI_INT, 0, MPI_COMM_WORLD);
-  }while(mode!=STOP);
-  return;
-}
-
 int selectPivot(int ip,int jp,int *a){
   int index=(ip!=jp)?(ip+rand()%(jp-ip)):(ip);
   return a[index];
@@ -191,11 +118,3 @@ INDICES initialIndices(int a_size){
   p.j=p.jp=a_size-1;
   return p;
 }
-
-
-
-
-
-
-
-
