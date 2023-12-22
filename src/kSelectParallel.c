@@ -9,7 +9,7 @@
 
 
 int kSelectParallel(char *array_filename, int k){
-  MPI_Init(NULL,NULL);
+  //MPI_Init(NULL,NULL);
 
   // Get basic MPI info of current node.
   int world_rank,world_size;
@@ -35,8 +35,6 @@ int kSelectParallel(char *array_filename, int k){
 
   // The selector of the cluster is changed on each iteration to make the pivot selections more random.
   for(pivot_selector=0;mode!=STOP;pivot_selector=(pivot_selector+1)%world_size){
-
-    printf("Pivot selector: %d\n",pivot_selector);
     // Pivot selection process.
     if(world_rank==pivot_selector){ // Current pivot selector.
       if(p.ip<=p.jp){ // If not empty..
@@ -62,18 +60,13 @@ int kSelectParallel(char *array_filename, int k){
         continue;
       }
     }
-    printf("BCast of pivot done, val:%d,\nrelative k:%d\n",pivot_val,relative_k);
   
     // Partition given the pivot.
     r=arrayPartition(array.values,pivot_val,&p);
 
-
     // Pass results to the Master (0).
     MPI_Reduce(&r.less_than_count,&less_than_total_count,1,MPI_INT, MPI_SUM,0,MPI_COMM_WORLD);
     MPI_Reduce(&r.pivot_count,&pivot_total_count,1,MPI_INT,MPI_SUM,0,MPI_COMM_WORLD);
-    if(world_rank==0)
-      printf("Reduce results:%d %d,relative k:%d\n",less_than_total_count,pivot_total_count,relative_k);
-
 
     // Mode selection and preparation for the next loop iteration.
     if(world_rank==0) // I am master.
@@ -84,7 +77,7 @@ int kSelectParallel(char *array_filename, int k){
     }
   }  
 
-  MPI_Finalize();
+  //MPI_Finalize();
   free(array.values);
   return pivot_val;
 }
@@ -99,7 +92,6 @@ void updateIndices(INDICES *p, enum mode mode){
       p->j=p->jp;
     }
 }
-
 
 int kSelectMaster(int *a, int a_size, int k, int world_size){
   // Master Specific.

@@ -12,4 +12,11 @@ void insertion_sort(int *arr, int n);
 */
 int testSeqSelect(int a_max_size,int a_max_val);
 
+/*  This verifies the correctness of kSelectParallel using random arrays and insertion_sort.
+*   Arrays are created from size 1 to max_size, while the desired k is looped from 0 to a.size-1.
+*   Each array is written in the localData directory in a temp.txt file in the format of arrayParse.
+*   Returns the number of failed tests.
+*/
+int testParallelSelect(int a_max_size,int a_max_val);
+
 #endif

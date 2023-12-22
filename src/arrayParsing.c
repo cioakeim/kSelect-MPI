@@ -13,7 +13,7 @@ ARRAY sharedFileParsing(char *file_name, int slot_id, int slot_count){
     exit(1);
   }
   if(fscanf(array_file,"%d ",&file_array_size)==EOF){
-    printf("Error! Is the array file empty?\n");
+    printf("Error! This is process %d.Is the array file empty?\n",slot_id);
     exit(1);
   }
   a.local_size=0;
@@ -30,6 +30,7 @@ ARRAY sharedFileParsing(char *file_name, int slot_id, int slot_count){
     read_cnt++;
     for(int i=0;i<(slot_count-1) && fscanf(array_file,"%d",&dont_use_this_value)!=EOF;i++,read_cnt++);
   }
+  fclose(array_file);
   a.local_size=count;
   return a;
 }
