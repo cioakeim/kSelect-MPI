@@ -15,8 +15,9 @@
  * LESS_THAN: Use partition from ip to i-1.
  * MORE_THAN: Use partition from j+1 to jp.
  * STOP: Is used only with MPI to send to workers that the prodecure is done.
+ * SKIP: Is used with MPI to skip a loop iteration if the current master is empty.
  */
-enum mode{LESS_THAN,MORE_THAN,STOP};
+enum mode{LESS_THAN,MORE_THAN,STOP,SKIP};
 
 /* Struct used to return the results of the partition.*/ 
 typedef struct{

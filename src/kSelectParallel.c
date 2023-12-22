@@ -9,80 +9,96 @@
 
 
 int kSelectParallel(char *array_filename, int k){
-  int result=0;
   MPI_Init(NULL,NULL);
 
+  // Get basic MPI info of current node.
   int world_rank,world_size;
   MPI_Comm_rank(MPI_COMM_WORLD,&world_rank);
   MPI_Comm_size(MPI_COMM_WORLD,&world_size);
 
+  // Get your part of the array.
   ARRAY array=sharedFileParsing(array_filename,world_rank,world_size);
-
   if(k<0||k>=array.total_size){
     printf("k must be within array's bounds. Aborting..\n");
     exit(1);
   }
+
   srand(time(NULL));
   int pivot_val,relative_k=k;
   int pivot_total_count,less_than_total_count;
-  int next_master=0,current_master=0;
+  int pivot_selector;
+  bool pivot_is_available;
+  // Bound setting variables.
   enum mode mode=LESS_THAN;
   INDICES p=initialIndices(array.local_size);
   RESULTS r;
 
-  do{
-    // Set boundaries 
-    if(mode==LESS_THAN){
-      p.jp=p.j;
-      p.i=p.ip;
-    }
-    else if(mode==MORE_THAN){
-      p.ip=p.i;
-      p.j=p.jp;
-    }
-    if(world_rank==current_master)
-      pivot_val=selectPivot(p.ip,p.jp,array.values); 
+  // The selector of the cluster is changed on each iteration to make the pivot selections more random.
+  for(pivot_selector=0;mode!=STOP;pivot_selector=(pivot_selector+1)%world_size){
 
-    // This master is empty, choose the next one
-    if(world_rank==current_master && p.ip==p.jp){
-      next_master=(current_master+1)%world_size;
+    printf("Pivot selector: %d\n",pivot_selector);
+    // Pivot selection process.
+    if(world_rank==pivot_selector){ // Current pivot selector.
+      if(p.ip<=p.jp){ // If not empty..
+        // Select a pivot, let the others know you have it and give it to them.
+        pivot_is_available=true;
+        pivot_val=selectPivot(p.ip,p.jp,array.values);
+        MPI_Bcast(&pivot_is_available,1,MPI_C_BOOL,pivot_selector,MPI_COMM_WORLD);
+        MPI_Bcast(&pivot_val,1,MPI_INT,pivot_selector,MPI_COMM_WORLD);
+      } 
+      else{ // If empty..
+        // Let them know and skip to next pivot selector.
+        pivot_is_available=false;
+        MPI_Bcast(&pivot_is_available,1,MPI_C_BOOL,pivot_selector,MPI_COMM_WORLD);
+        continue;
+      }
     }
-    MPI_Bcast(&next_master,1,MPI_INT,current_master,MPI_COMM_WORLD);
-    // Send relative_k to next master 
-    if(current_master!=next_master && world_rank==current_master){
-      MPI_Send(&relative_k, 1, MPI_INT, next_master, 0, MPI_COMM_WORLD);
+    else{ // Not the pivot selector.
+      MPI_Bcast(&pivot_is_available,1,MPI_C_BOOL,pivot_selector,MPI_COMM_WORLD);
+      if(pivot_is_available){ // If the ok is given, take the pivot and proceed.
+        MPI_Bcast(&pivot_val,1,MPI_INT,pivot_selector,MPI_COMM_WORLD);
+      }
+      else{ // Else just skip to the next pivot selector.
+        continue;
+      }
     }
-    else if(current_master!=next_master&&world_rank==next_master){
-      MPI_Recv(&relative_k,1,MPI_INT,current_master,0,MPI_COMM_WORLD,MPI_STATUS_IGNORE);
-    }
-    current_master=next_master;
-    MPI_Bcast(&pivot_val,1,MPI_INT,current_master,MPI_COMM_WORLD);
     printf("BCast of pivot done, val:%d,\nrelative k:%d\n",pivot_val,relative_k);
+  
+    // Partition given the pivot.
     r=arrayPartition(array.values,pivot_val,&p);
 
-    MPI_Reduce(&r.less_than_count,&less_than_total_count,1,MPI_INT, MPI_SUM,current_master,MPI_COMM_WORLD);
-    MPI_Reduce(&r.pivot_count,&pivot_total_count,1,MPI_INT,MPI_SUM,current_master,MPI_COMM_WORLD);
-    printf("Reduce results:%d %d,relative k:%d\n",less_than_total_count,pivot_total_count,relative_k);
-    if(world_rank==current_master)
-      mode=decideNextMode(less_than_total_count,pivot_total_count,&relative_k);
-    printf("Next mode: %d\n",mode);
-    getchar();
-    MPI_Bcast(&mode, 1, MPI_INT, 0, MPI_COMM_WORLD);
-  }while(mode!=STOP);
-  printf("Stopped, result is: %d\n",result);
 
-  // Return result to 0 (calling process) 
-  if(world_rank==current_master){
-    MPI_Send(&pivot_val,1,MPI_INT,0,1,MPI_COMM_WORLD);
-  }
-  if(world_rank==0){
-    MPI_Recv(&pivot_val, 1, MPI_INT, current_master, 1, MPI_COMM_WORLD,MPI_STATUS_IGNORE);
-  }
+    // Pass results to the Master (0).
+    MPI_Reduce(&r.less_than_count,&less_than_total_count,1,MPI_INT, MPI_SUM,0,MPI_COMM_WORLD);
+    MPI_Reduce(&r.pivot_count,&pivot_total_count,1,MPI_INT,MPI_SUM,0,MPI_COMM_WORLD);
+    if(world_rank==0)
+      printf("Reduce results:%d %d,relative k:%d\n",less_than_total_count,pivot_total_count,relative_k);
+
+
+    // Mode selection and preparation for the next loop iteration.
+    if(world_rank==0) // I am master.
+      mode=decideNextMode(less_than_total_count,pivot_total_count,&relative_k);
+    MPI_Bcast(&mode, 1, MPI_INT, 0, MPI_COMM_WORLD); // Everyone gets the next mode.
+    if(mode!=STOP){ // If the procedure continues you update the indices for the next one.
+      updateIndices(&p,mode);
+    }
+  }  
+
   MPI_Finalize();
   free(array.values);
   return pivot_val;
 }
 
+void updateIndices(INDICES *p, enum mode mode){
+    if(mode==LESS_THAN){
+      p->jp=p->j;
+      p->i=p->ip;
+    }
+    else if(mode==MORE_THAN){
+      p->ip=p->i;
+      p->j=p->jp;
+    }
+}
 
 
 int kSelectMaster(int *a, int a_size, int k, int world_size){

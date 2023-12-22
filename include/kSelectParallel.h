@@ -6,6 +6,7 @@
 
 #include "kSelectSequential.h"
 
+
 /* Main Parallel algorithm.
  * Returns the value of the k-th largest element of a. 
  */
@@ -19,9 +20,13 @@ int selectPivot(int ip, int jp, int *a);
  */
 enum mode decideNextMode(int less_than_total_count,int pivot_total_count,int *relative_k);
 
-
 /* Simple initiation*/
 INDICES initialIndices(int a_size);
+
+/* Updating indices for each loop iteration to set the working part of the array based on the 
+ * given mode.
+ */
+void updateIndices(INDICES *p, enum mode mode);
 
 /* Master node prodecure.
 *   The Master node collects the counts from the slave nodes and calculates the next mode of operation.
