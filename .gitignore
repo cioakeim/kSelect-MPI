@@ -7,3 +7,6 @@ localData/
 
 # Linter flags 
 compile_flags.txt
+
+# temp file for test.c 
+temp.c
