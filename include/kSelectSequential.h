@@ -11,6 +11,8 @@
 #define A_MAX 30
 #define K 13
 
+#include <stdint.h>
+
 /* Modes enumerator for the paritition function: 
  * LESS_THAN: Use partition from ip to i-1.
  * MORE_THAN: Use partition from j+1 to jp.
@@ -50,7 +52,7 @@ typedef struct{
  *  a's form after the procedure:
  *    a(a_start:ip-1)==p && a(jp+1:a_end-1)==p && a(ip:i-1)<p && a(j+1:jp)>p.
 */
-RESULTS arrayPartition(int *a, int pivot, INDICES *p);
+RESULTS arrayPartition(uint32_t *a, uint32_t pivot, INDICES *p);
 
 /* Main function of the module implemented sequentially. Returns the value of kth largest element 
  * in the array. 
@@ -61,6 +63,6 @@ RESULTS arrayPartition(int *a, int pivot, INDICES *p);
  * Output: 
  *  Value of the kth largest element of a.
 */
-int kSelectSequential(int *a, int a_size, int k);
+uint32_t kSelectSequential(uint32_t *a, int a_size, int k);
 
 #endif

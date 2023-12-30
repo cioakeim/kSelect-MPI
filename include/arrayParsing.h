@@ -7,11 +7,13 @@
 #ifndef ARRAY_PARSING_H
 #define ARRAY_PARSING_H
 
+#include <stdint.h>
+
 /* Simple struct to package array pointer and size*/ 
 typedef struct{
-  int* values;
+  uint32_t* values;
   int local_size;
-  int total_size;
+  uint64_t total_size;
 } ARRAY;
 
 /*  

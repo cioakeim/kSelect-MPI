@@ -5,20 +5,21 @@
 #define K_SELECT_PARALLEL_H
 
 #include "kSelectSequential.h"
+#include <stdint.h>
 
 
 /* Main Parallel algorithm.
  * Returns the value of the k-th largest element of a. 
  */
-int kSelectParallel(char *array_filename,int k); 
+uint32_t kSelectParallel(char *array_filename,uint64_t k); 
 
 /* Master function that selects a pivot based on the current array bounds*/ 
-int selectPivot(int ip, int jp, int *a);
+uint32_t selectPivot(int ip, int jp, uint32_t *a);
 
 /* Calculates next mode based on the total amount of less than and pivot counts.
  * Relative_k is updated (passed by reference)
  */
-enum mode decideNextMode(int less_than_total_count,int pivot_total_count,int *relative_k);
+enum mode decideNextMode(uint64_t less_than_total_count,uint64_t pivot_total_count,uint64_t *relative_k);
 
 /* Simple initiation*/
 INDICES initialIndices(int a_size);

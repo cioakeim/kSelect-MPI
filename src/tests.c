@@ -5,11 +5,13 @@
 #include <stdlib.h>
 #include <stdio.h>
 #include <time.h>
+#include <inttypes.h>
 
 // Classic insertion sort.
-void insertion_sort(int *arr, int n)
+void insertion_sort(uint32_t *arr, int n)
 {
-    int i, key, j;
+    int i, j;
+    uint32_t key;
     for (i = 1; i < n; i++) {
         key = arr[i];
         j = i - 1;
@@ -21,16 +23,16 @@ void insertion_sort(int *arr, int n)
     }
 }
 
-int testSeqSelect(int a_max_size, int a_max_val){
+int testSeqSelect(int a_max_size, uint32_t a_max_val){
   int fails=0;
-  int *a;
-  int kResult;
+  uint32_t *a;
+  uint32_t kResult;
 
   srand(time(NULL));
   for(int size=1;size<=a_max_size;size++){
     for(int k=0;k<size;k++){
       // Create array 
-      a=(int*)malloc(size*sizeof(int));
+      a=(uint32_t*)malloc(size*sizeof(uint32_t));
       for(int i=0;i<size;i++){
         a[i]=rand()%a_max_val;
       }
@@ -40,7 +42,7 @@ int testSeqSelect(int a_max_size, int a_max_val){
       if(kResult!=a[k]){
         fails++;
         printf("Wrong result with size: %d and k:%d\n",size,k);
-        printf("Expected:%d Got:%d\n",a[k],kResult);
+        printf("Expected:%" PRIu32" Got:%" PRIu32 "\n",a[k],kResult);
         getchar();
       }
       free(a);
@@ -49,44 +51,45 @@ int testSeqSelect(int a_max_size, int a_max_val){
   return fails;
 }
 
-int testParallelSelect(int a_max_size, int a_max_val){
-  int fails=0;
-  int count=0;
-  int kResult;
-  int *a;
+int testParallelSelect(uint64_t a_max_size, uint32_t a_max_val){
+  uint64_t fails=0;
+  uint64_t count=0;
+  uint32_t kResult;
+  uint32_t *a;
   int world_rank;
   FILE* temp;
   MPI_Comm_rank(MPI_COMM_WORLD,&world_rank);
   srand(time(NULL));
-  for(int size=1;size<=a_max_size;size++){
-    for(int k=0;k<size;k++){
+  for(uint64_t size=1;size<=a_max_size;size++){
+    for(uint64_t k=0;k<size;k++){
       // Only root does the creation
       if(world_rank==0){ // All of this is sequential.
-        printf("Test %d of %d\n",count,(a_max_size+1)*a_max_size/2);
+        printf("Test %" PRIu64 " of %" PRIu64 "\n",count,(a_max_size+1)*a_max_size/2);
         // Create array 
-        a=(int*)malloc(size*sizeof(int));
-        for(int i=0;i<size;i++){
+        a=(uint32_t*)malloc(size*sizeof(uint32_t));
+        for(uint64_t i=0;i<size;i++){
           a[i]=rand()%a_max_val;
         }
         // Write it to temp file
         if((temp=fopen("temp.txt","w"))==NULL){
           printf("Error in opening test.txt file\n");
         }
-        fprintf(temp,"%d\n\n",size);
-        for(int i=0;i<size;i++){
-          fprintf(temp,"%d\n",a[i]);
+        fprintf(temp,"%" PRIu64 "\n\n",size);
+        for(uint64_t i=0;i<size;i++){
+          fprintf(temp,"%" PRIu32 "\n",a[i]);
         }
         fclose(temp);
         // Insertion sort for the result
         insertion_sort(a, size);
       }
+
       MPI_Barrier(MPI_COMM_WORLD);
       kResult=kSelectParallel("temp.txt", k);
       MPI_Barrier(MPI_COMM_WORLD);
       if(world_rank==0){
         if(kResult!=a[k]){
           fails++;
-          printf("Wrong result with size: %d and k: %d\n",size,k);
+          printf("Wrong result with size: %" PRIu64 " and k: %" PRIu64 "\n",size,k);
           getchar();
         }
         // Cleanup this test.

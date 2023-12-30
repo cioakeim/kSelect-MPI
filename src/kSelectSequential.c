@@ -5,13 +5,13 @@
 #include <stdbool.h> // Used for boolean type
 
 // Array Partition.
-RESULTS arrayPartition(int *a, int pivot, INDICES *p){
+RESULTS arrayPartition(uint32_t *a, uint32_t pivot, INDICES *p){
   RESULTS results;
   // Since jp and ip will be moving, the intial bounds of the array are stored.
   int working_partition_start=p->ip;
   int working_partition_end=p->jp;
   bool done=p->i>p->j; 
-  int temp;
+  uint32_t temp;
   // Main body of partition.
   while(!done){
     // Move i until you find a >p element
@@ -50,7 +50,7 @@ RESULTS arrayPartition(int *a, int pivot, INDICES *p){
 }
 
 // Main sequential function.
-int kSelectSequential(int *a, int a_size, int k){
+uint32_t kSelectSequential(uint32_t *a, int a_size, int k){
   // Error handling for parameters
   if(k>=a_size || k<0){
     printf("Input error: k must be within the array's bounds\n");
@@ -59,7 +59,7 @@ int kSelectSequential(int *a, int a_size, int k){
   // Initialize
   int relative_k=k; // This represents the desired k in the array that is currently worked.
   enum mode mode = LESS_THAN; // Doesn't matter at the beginning, decides the next partition to be worked.
-  int pivot_val;
+  uint32_t pivot_val;
   int pivot_index;
   srand(time(NULL));
   INDICES p;
