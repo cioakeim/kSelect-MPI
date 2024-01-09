@@ -5,26 +5,20 @@
 #define K_SELECT_PARALLEL_H
 
 #include "kSelectSequential.h"
+#include "arrayParsing.h"
 #include <stdint.h>
 #include <stdbool.h>
 
 
 /* Main Parallel algorithm.
  * Returns the value of the k-th largest element of a. 
- * array_filename is either:
- *  A local file whose name is specified here
- *  A url of an online file that is retrieved with cURL
- * the option is specified in the bool filename_is_URL.
  */
-uint32_t kSelectParallel(const char *array_filename,uint64_t k,bool filename_is_URL); 
-
-/* Modification for gathering feature*/
-uint32_t kSelectParallel2(const char *array_filename,uint64_t k,bool filename_is_URL); 
+uint32_t kSelectParallel(ARRAY array,uint64_t k); 
 
 /* Auxilliary function for gathering*/
 uint32_t gatherToRootAndFinish(uint32_t *array,int world_rank,int world_size, INDICES indices,uint64_t k);
 
-/* Master function that selects a pivot based on the current array bounds*/ 
+/* Pivot selector function that selects a pivot based on the current array bounds*/ 
 uint32_t selectPivot(int ip, int jp, uint32_t *a);
 
 /* Calculates next mode based on the total amount of less than and pivot counts.

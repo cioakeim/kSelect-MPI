@@ -1,4 +1,5 @@
 #include "tests.h"
+#include "arrayParsing.h"
 #include "kSelectParallel.h"
 #include "kSelectSequential.h"
 #include <mpi.h>
@@ -56,9 +57,11 @@ int testParallelSelect(uint64_t a_max_size, uint32_t a_max_val){
   uint64_t count=0;
   uint32_t kResult;
   uint32_t *a;
-  int world_rank;
+  ARRAY array;
+  int world_rank,world_size;
   FILE* temp;
   MPI_Comm_rank(MPI_COMM_WORLD,&world_rank);
+  MPI_Comm_size(MPI_COMM_WORLD,&world_size);
   srand(time(NULL));
   for(uint64_t size=1;size<=a_max_size;size++){
     for(uint64_t k=0;k<size;k++){
@@ -84,7 +87,8 @@ int testParallelSelect(uint64_t a_max_size, uint32_t a_max_val){
       }
 
       MPI_Barrier(MPI_COMM_WORLD);
-      kResult=kSelectParallel2("temp.txt", k,0);
+      array=sharedFileParsing("temp.txt", world_rank, world_size);
+      kResult=kSelectParallel(array, k);
       MPI_Barrier(MPI_COMM_WORLD);
       if(world_rank==0){
         if(kResult!=a[k]){
