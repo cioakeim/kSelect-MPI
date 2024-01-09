@@ -8,14 +8,15 @@
  
 
 int main(int argc, char**argv){
-  int world_rank;
   MPI_Init(&argc,&argv);
-  MPI_Comm_rank(MPI_COMM_WORLD,&world_rank);
 
-  int fails=testParallelSelect(1000, 500);
-  if(world_rank==0){
-    printf("Fails: %d\n",fails);
-  }
+  const char *url="https://dumps.wikimedia.org/other/static_html_dumps/current/el/wikipedia-el-html.tar.7z";
+
+  uint64_t k=10;
+  uint32_t value=kSelectParallel2(url,k,1);
+  printf("Value is %d\n",value);
+
+
   MPI_Finalize();
   return 0;
 }

@@ -64,7 +64,7 @@ int testParallelSelect(uint64_t a_max_size, uint32_t a_max_val){
     for(uint64_t k=0;k<size;k++){
       // Only root does the creation
       if(world_rank==0){ // All of this is sequential.
-        printf("Test %" PRIu64 " of %" PRIu64 "\n",count,(a_max_size+1)*a_max_size/2);
+        printf("Test %" PRIu64 " of %" PRIu64 ", size: %" PRIu64 "\n",count,(a_max_size+1)*a_max_size/2,size);
         // Create array 
         a=(uint32_t*)malloc(size*sizeof(uint32_t));
         for(uint64_t i=0;i<size;i++){
@@ -84,12 +84,14 @@ int testParallelSelect(uint64_t a_max_size, uint32_t a_max_val){
       }
 
       MPI_Barrier(MPI_COMM_WORLD);
-      kResult=kSelectParallel("temp.txt", k);
+      kResult=kSelectParallel2("temp.txt", k,0);
       MPI_Barrier(MPI_COMM_WORLD);
       if(world_rank==0){
         if(kResult!=a[k]){
           fails++;
           printf("Wrong result with size: %" PRIu64 " and k: %" PRIu64 "\n",size,k);
+          printf("Expected: %" PRIu32 " got %" PRIu32 "\n",a[k],kResult);
+          printf("Near sorted point: %" PRIu32 " %" PRIu32 " %" PRIu32 "\n",a[k-1],a[k],a[k+1]);
           getchar();
         }
         // Cleanup this test.

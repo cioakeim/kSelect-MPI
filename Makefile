@@ -23,11 +23,11 @@ all: $(BIN)
 
 $(BIN): $(OBJ)
 	@mkdir -p $(BINDIR)
-	$(CC) $(CFLAGS) -o $@ $^
+	$(CC) $(CFLAGS) -o $@ $^ -lcurl
 
 $(OBJDIR)/%.o: $(SRCDIR)/%.c
 	@mkdir -p $(OBJDIR)
-	$(CC) $(CFLAGS) -c $< -o $@
+	$(CC) $(CFLAGS) -c $< -o $@ -lcurl
 
 # If there is a header file for that source code, it's a dependency.
 $(SRCDIR)/%.c: $(INCDIR)/%.h

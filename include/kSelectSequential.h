@@ -18,8 +18,9 @@
  * MORE_THAN: Use partition from j+1 to jp.
  * STOP: Is used only with MPI to send to workers that the prodecure is done.
  * SKIP: Is used with MPI to skip a loop iteration if the current master is empty.
+ * GATHER (LT/MT): Is used to collect all the working elements to the 0 rank for sequential solution.
  */
-enum mode{LESS_THAN,MORE_THAN,STOP,SKIP};
+enum mode{LESS_THAN,MORE_THAN,STOP,SKIP,GATHER_LT,GATHER_MT};
 
 /* Struct used to return the results of the partition.*/ 
 typedef struct{
