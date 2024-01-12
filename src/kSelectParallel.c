@@ -2,13 +2,13 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <time.h>
-#include <inttypes.h>
+#include <stdint.h>
 #include <stdbool.h>
 #include "kSelectParallel.h" 
 #include "kSelectSequential.h"
 #include "arrayParsing.h"
 
-
+// Main parallel algorithm.
 uint32_t kSelectParallel(ARRAY array, uint64_t k){
   // Get basic MPI info of current node.
   int world_rank,world_size;
@@ -30,10 +30,9 @@ uint32_t kSelectParallel(ARRAY array, uint64_t k){
   enum mode mode=LESS_THAN;
   INDICES p=initialIndices(array.local_size);
   RESULTS r;
-
   // The selector of the cluster is changed on each iteration to make the pivot selections more random.
   for(pivot_selector=0;mode!=STOP;pivot_selector=(pivot_selector+1)%world_size){
-    // Exclude possibility of total gathering.
+    // If a gather was decided, gather to root and finish sequentially.
     if(mode==GATHER_LT || mode==GATHER_MT){
       return gatherToRootAndFinish(array.values, world_rank, world_size, p, relative_k);
     }
@@ -62,7 +61,6 @@ uint32_t kSelectParallel(ARRAY array, uint64_t k){
         continue;
       }
     }
-  
     // Partition given the pivot.
     r=arrayPartition(array.values,pivot_val,&p);
     // Pass results to 64 bit ints to avoid overflow from reduce.
@@ -71,10 +69,10 @@ uint32_t kSelectParallel(ARRAY array, uint64_t k){
     // Pass results to the Master (0).
     MPI_Reduce(&temp_less_than_count,&less_than_total_count,1,MPI_UINT64_T, MPI_SUM,0,MPI_COMM_WORLD);
     MPI_Reduce(&temp_pivot_count,&pivot_total_count,1,MPI_UINT64_T,MPI_SUM,0,MPI_COMM_WORLD);
-
     // Mode selection and preparation for the next loop iteration.
-    if(world_rank==0){
+    if(world_rank==0){ // I am master.
       mode=decideNextMode(less_than_total_count,pivot_total_count,&relative_k);
+      // Extra check to modify the modes to their gather equivalents if the size is right.
       if(mode==LESS_THAN){
         working_total_size=less_than_total_count;
         mode=(working_total_size<array.local_size)?(GATHER_LT):(mode);
@@ -83,21 +81,19 @@ uint32_t kSelectParallel(ARRAY array, uint64_t k){
         working_total_size=working_total_size-less_than_total_count-pivot_total_count;
         mode=(working_total_size<array.local_size)?(GATHER_MT):(mode);
       }
-    } // I am master.
+    }
     MPI_Bcast(&mode, 1, MPI_INT, 0, MPI_COMM_WORLD); // Everyone gets the next mode.
     if(mode!=STOP){ // If the procedure continues you update the indices for the next one.
       updateIndices(&p,mode);
     }
   }  
   //MPI_Finalize();
-  free(array.values);
   if(world_rank==0)
     return pivot_val;
   else
     return 0;
 }
-
-// It is assumed that the indices have already been set up before the procedure.
+// It is assumed that the indices have already been set up to the working parts before the procedure.
 uint32_t gatherToRootAndFinish(uint32_t *array,int world_rank, int world_size, INDICES indices,uint64_t k){
   int *sizes=NULL;
   int *displacements=NULL;
@@ -127,6 +123,8 @@ uint32_t gatherToRootAndFinish(uint32_t *array,int world_rank, int world_size, I
   // kSelectSequential is executed.
   if(world_rank==0){
     uint32_t result=kSelectSequential(array, displacements[world_size], k);
+    free(sizes);
+    free(displacements);
     return result;
   }
   else{

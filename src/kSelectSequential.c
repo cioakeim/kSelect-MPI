@@ -48,7 +48,6 @@ RESULTS arrayPartition(uint32_t *a, uint32_t pivot, INDICES *p){
   results.pivot_count=p->ip-working_partition_start+working_partition_end-p->jp;
   return results;
 }
-
 // Main sequential function.
 uint32_t kSelectSequential(uint32_t *a, int a_size, int k){
   // Error handling for parameters
@@ -97,16 +96,3 @@ uint32_t kSelectSequential(uint32_t *a, int a_size, int k){
   }while(mode!=STOP);
   return pivot_val;
 }
-
-
-
-
-
-
-
-
-
-
-
-
-

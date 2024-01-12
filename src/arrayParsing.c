@@ -2,6 +2,7 @@
 #include <curl/curl.h>
 #include <curl/easy.h>
 #include <curl/system.h>
+#include <sys/stat.h>
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
@@ -10,11 +11,11 @@
 #include <mpi.h>
 
 // Local file parsing (in txt form)
+// Slow way if the file is large, size all processes reads the whole file.
 ARRAY sharedFileParsing(const char *file_name, int slot_id, int slot_count){
   ARRAY a;
   FILE *array_file;
   uint64_t file_array_size;
-
   array_file=fopen(file_name,"r");
   if(array_file==NULL){
     printf("Error in reading array file... Aborting.\n");
@@ -47,7 +48,40 @@ ARRAY sharedFileParsing(const char *file_name, int slot_id, int slot_count){
   return a;
 }
 
+// The file is split as evenly as possible.
+ARRAY sharedFileBinaryParsing(const char* file_name, int world_rank,int world_size){
+  ARRAY result;
+  struct stat file_status;
+  FILE* array_file;
+  if(stat(file_name,&file_status)<0){
+    printf("Error in file size retrieval\n");
+    exit(1);
+  }
+  result.total_size=file_status.st_size/4; // Truncate extra bytes that don't form an uint32_t
+  // Calculate byte range 
+  long int start_byte=4*world_rank*(result.total_size/world_size);
+  long int end_byte=(world_rank==world_size-1)?(4*result.total_size-1):(4*(world_rank+1)*(result.total_size/world_size)-1);
+  result.local_size=(end_byte-start_byte+1)/4;
+  // Open file 
+  array_file=fopen(file_name,"rb+");
+  if(!array_file){
+    printf("sharedFileBinaryParsing error. Couldn't open file. Aborting\n");
+    exit(1);
+  }
+  fseek(array_file, start_byte, SEEK_SET);
+  // Get the part that you need 
+  result.values=(uint32_t*)malloc(result.local_size*sizeof(uint32_t));
+  size_t test;
+  if((test=fread((void*)result.values, sizeof(uint32_t), result.local_size, array_file))!=result.local_size){
+    printf("Error in data read...\n");
+    printf("Rank %d expected %d got %zu",world_rank,result.local_size,test);
+    exit(1);
+  }
+  return result;
+}
+
 // URL Parsing functions.
+
 // Write callback function for curl.
 size_t write_callback(void* data, size_t size, size_t nmemb, void* dest){
   STREAM* stream=(STREAM*)dest;
@@ -138,6 +172,22 @@ ARRAY getURLFile(const char *url, int world_rank, int world_size, int maxThreads
     total_size=getURLSize(url);
   }
   MPI_Bcast(&total_size, 1, MPI_UINT64_T, 0, MPI_COMM_WORLD);
+  // Only few at a time get file in parallel.
+  for(int start_rank=0;start_rank<world_size;start_rank+=maxThreadsPerCurl){
+    if(world_rank>=start_rank && world_rank<start_rank+maxThreadsPerCurl){
+      result=getURLPartition(url, world_rank, world_size, total_size);
+    }
+    MPI_Barrier(MPI_COMM_WORLD);
+  }
+  curl_global_cleanup();
+  return result;
+}
+
+// Function that scans only a portion of the file to get a fixed size array.
+// Same as getURLFile without the size retrieval.
+ARRAY getURLFixedSize(const char *url,int world_rank,int world_size,int maxThreadsPerCurl,uint64_t total_size){
+  ARRAY result;
+  curl_global_init(CURL_GLOBAL_ALL);
   // Only few at a time get file in parallel.
   for(int start_rank=0;start_rank<world_size;start_rank+=maxThreadsPerCurl){
     if(world_rank>=start_rank && world_rank<start_rank+maxThreadsPerCurl){

@@ -1,11 +1,8 @@
-/*  
-*  This module is used for the parsing of the array (that is stored in disk) to the nodes of the 
-*  MPI cluster for the kSelect algorithm. All the functions below assume that the array is stored 
-*  in a .txt file with the 1st line determining the size of the array, followed by a blank line and 
-*  the array elements, separated by newlines.
-*
-*  The other portion of the file uses libcurl to retrieve a file using its URL and store it in RAM 
-*  as an array of uint32_t elements.
+/*  This module constists of all the ways of parsing a desired array into the program.
+ *  1. In txt format: array_size \n\n element[0] \n element [1] \n ... 
+ *  2. In binary format. 
+ *  3. Using libCURL to read the whole file as binary.
+ *  4. Using libCURL to read a beginning portion of the file as binary until a specified size.
 */
 #ifndef ARRAY_PARSING_H
 #define ARRAY_PARSING_H
@@ -13,6 +10,7 @@
 #include <stdint.h>
 #include <stdlib.h>
 
+// The dataset link only allows this many curl calls from the same ip.
 #define WIKI_MAX_PER_CURL 3
 
 /* Simple struct to package array pointer and size*/ 
@@ -31,15 +29,12 @@ typedef struct {
 
 /*  
 * Parsing of data matrix that is in shared memory (i.e the host's disk).
-* Inputs:
-*   file_name (string): the name of the array txt file (relative paths are supported).
-*   slot_id (int): the id of the slot in the slot cluster.
-*   int slot_count (int): total number of slots that share the file.
-*   world_rank,world_size: determine the part of the array to be read.
-* Outputs:
-*   ARRAY: read array portion. 
+* The data is in txt format where each line is a uint32_t and 1st line is size \n\n.
 */
 ARRAY sharedFileParsing(const char *file_name, int slot_id, int slot_count);
+
+/* Given a file name, each task gets its corresponding cut*/
+ARRAY sharedFileBinaryParsing(const char* file_name, int world_rank, int world_size);
 
 /* Functions used for getURLFile */
 
@@ -57,5 +52,9 @@ ARRAY getURLPartition(const char *url,int world_rank,int world_size,uint64_t tot
 */
 ARRAY getURLFile(const char *url, int world_rank, int world_size, int maxThreadsPerCurl);
 
+/* Modified version of getURLFile that lets the user specify the size of the array that they want
+* so that curl only scans the beginning of the array that corresponds to that size. 
+*/
+ARRAY getURLFixedSize(const char *url,int world_rank,int world_size,int maxThreadsPerCurl,uint64_t total_size);
 
 #endif

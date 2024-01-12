@@ -1,7 +1,6 @@
 /* kSelectSequential.h:
  * This module implements the procedures used for the k select algorithm, where the input is an array
  * a and the output is the value of the kth largest element of the array.
- *
  * These modules are also used in the parallel version of the algorithm using Open MPI.
 */
 #ifndef K_SELECT_SEQUENTIAL_H

@@ -19,6 +19,6 @@ int testSeqSelect(int a_max_size,uint32_t a_max_val);
 *   Each array is written in the localData directory in a temp.txt file in the format of arrayParse.
 *   Returns the number of failed tests.
 */
-int testParallelSelect(uint64_t a_max_size,uint32_t a_max_val);
+int testParallelSelect(uint64_t a_max_size,uint32_t a_max_val,const char* temp_file_location);
 
 #endif
