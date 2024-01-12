@@ -16,6 +16,7 @@ The folder "main" contains all the scripts that use the above functions and were
 * "time_p_job" similarly provides the average time for reading a file (used with batch scripts for time(p))
 * "find_even_percentiles" is a script that calculates and stores [p] percentiles of a where each value 
   is i times size/p, where i ranges from 0 to p-1.
+* "testing_job" just tests the parallel algorithm's correctness.
 
 The folder "scripts" contains all the job scripts for the HPC server.
 

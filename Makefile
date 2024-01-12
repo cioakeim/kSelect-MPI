@@ -22,7 +22,7 @@ list:
 
 .PHONY: all clean
 
-all: testing timeN timeP 
+all: testing timeN timeP main percentiles 
 
 testing: $(MAINOBJDIR)/testing_job.o $(OBJ)
 	@mkdir -p $(BINDIR)
