@@ -14,7 +14,7 @@
 
 int main(int argc,char **argv){
   if(argc!=4){
-    printf("Usage: ./find_even_percentiles [fileLocation] [numOfResults] [storeLocation]");
+    printf("Usage: ./find_even_percentiles [fileLocation] [numOfResults] [storeLocation]\n");
     exit(1);
   }
   int world_rank,world_size;
@@ -32,7 +32,7 @@ int main(int argc,char **argv){
     result_location=(char*)malloc(100*sizeof(char));
     snprintf(result_location,99,"%s/percentile_result_%d.txt",argv[3],world_size);
     if(world_rank==0){
-      printf("%s\n",result_location);
+      printf("Saving to %s\n",result_location);
     }
     result_file=fopen(result_location,"w");
     if(!result_file){

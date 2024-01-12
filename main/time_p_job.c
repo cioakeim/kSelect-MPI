@@ -14,7 +14,7 @@ double get_time(struct timeval a, struct timeval b);
 
 int main(int argc,char** argv){
   if(argc!=3){
-    printf("Usage: ./time_p_job [dataLocation (no '/')] [fileLocation]");
+    printf("Usage: ./time_p_job [dataLocation] [fileName]\n");
     exit(1);
   }
   int world_rank,world_size;

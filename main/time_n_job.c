@@ -22,7 +22,8 @@ double get_time(struct timeval a, struct timeval b);
 
 int main(int argc,char** argv){
   if(argc!=2){
-    printf("Usage: ./time_n_job [data location (no '/' at the end)]");
+    printf("Usage: ./time_n_job [data location]\n");
+    exit(1);
   }
   int world_rank,world_size;
   MPI_Init(&argc, &argv);

@@ -7,6 +7,7 @@
 #include "kSelectParallel.h" 
 #include "kSelectSequential.h"
 #include "arrayParsing.h"
+#include <inttypes.h>
 
 // Main parallel algorithm.
 uint32_t kSelectParallel(ARRAY array, uint64_t k){
@@ -94,7 +95,7 @@ uint32_t kSelectParallel(ARRAY array, uint64_t k){
     return 0;
 }
 // It is assumed that the indices have already been set up to the working parts before the procedure.
-uint32_t gatherToRootAndFinish(uint32_t *array,int world_rank, int world_size, INDICES indices,uint64_t k){
+uint32_t gatherToRootAndFinish(uint32_t* array,int world_rank, int world_size, INDICES indices,uint64_t k){
   int *sizes=NULL;
   int *displacements=NULL;
   if(world_rank==0){

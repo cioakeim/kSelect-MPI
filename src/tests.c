@@ -7,6 +7,7 @@
 #include <stdio.h>
 #include <time.h>
 #include <inttypes.h>
+#include <string.h>
 
 // Classic insertion sort.
 void insertion_sort(uint32_t *arr, int n)
@@ -65,6 +66,10 @@ int testParallelSelect(uint64_t a_max_size, uint32_t a_max_val,const char* temp_
   MPI_Comm_rank(MPI_COMM_WORLD,&world_rank);
   MPI_Comm_size(MPI_COMM_WORLD,&world_size);
   srand(time(NULL));
+  // Root handles temp file 
+  char *temp_file_name;
+  temp_file_name=(char*)malloc(100*sizeof(char));
+  snprintf(temp_file_name,99,"%s/temp.txt",temp_file_location);
   // For each size..
   for(uint64_t size=1;size<=a_max_size;size++){
     // For each k..
@@ -78,8 +83,8 @@ int testParallelSelect(uint64_t a_max_size, uint32_t a_max_val,const char* temp_
           a[i]=rand()%a_max_val;
         }
         // Write it to temp file
-        if((temp=fopen(temp_file_location,"w"))==NULL){
-          printf("Error in opening test.txt file\n");
+        if((temp=fopen(temp_file_name,"w"))==NULL){
+          printf("Error in opening temp.txt file\n");
         }
         fprintf(temp,"%" PRIu64 "\n\n",size);
         for(uint64_t i=0;i<size;i++){
@@ -92,7 +97,7 @@ int testParallelSelect(uint64_t a_max_size, uint32_t a_max_val,const char* temp_
       // Slaves make sure the master is done.
       MPI_Barrier(MPI_COMM_WORLD);
       // Get file part..
-      array=sharedFileParsing(temp_file_location, world_rank, world_size);
+      array=sharedFileParsing(temp_file_name, world_rank, world_size);
       // Get result..
       kResult=kSelectParallel(array, k);
       MPI_Barrier(MPI_COMM_WORLD);
@@ -112,5 +117,6 @@ int testParallelSelect(uint64_t a_max_size, uint32_t a_max_val,const char* temp_
   if(world_rank==0){
     remove("temp.txt");
   }
+  free(temp_file_name);
   return fails;
 }

@@ -13,7 +13,8 @@
 
 int main(int argc, char**argv){
   if(argc!=3){
-    printf("Correct usage: ./main [fileName] [k]");
+    printf("Correct usage: ./main [fileName] [k]\n");
+    exit(1);
   }
   MPI_Init(&argc,&argv);
   // Get basic MPI info of current node.
@@ -21,8 +22,13 @@ int main(int argc, char**argv){
   MPI_Comm_rank(MPI_COMM_WORLD,&world_rank);
   MPI_Comm_size(MPI_COMM_WORLD,&world_size);
   char *ptr;
-  uint64_t k=strtoul(argv[1],&ptr,10);
+  uint64_t k=strtoul(argv[2],&ptr,10);
   ARRAY array=sharedFileBinaryParsing(argv[1], world_rank, world_size);
+  MPI_Barrier(MPI_COMM_WORLD);
+  if(world_rank==0){
+    printf("Calculating k=%" PRIu64 " of array of size %" PRIu64"\n",k,array.total_size);
+  }
+  MPI_Barrier(MPI_COMM_WORLD);
   uint32_t result=kSelectParallel(array, k);
   if(world_rank==0){
     printf("Job done. Result is: %" PRIu32 "\n",result);
